@@ -489,6 +489,14 @@ int rgw_remove_bucket_bypass_gc(RGWRadosStore *store, rgw_bucket& bucket,
       ret = store->getRados()->get_obj_state(&obj_ctx, info, obj, &astate, false, y);
       if (ret == -ENOENT) {
         dout(1) << "WARNING: cannot find obj state for obj " << obj.get_oid() << dendl;
+	// Delete the corresponding key index here
+        if (keep_index_consistent) {
+          ret = store->getRados()->delete_obj_index(obj, astate->mtime);
+          if (ret < 0) {
+            lderr(cct) << "ERROR: failed to delete obj index with ret=" << ret << dendl;
+            return ret;
+          }
+        }
         continue;
       }
       if (ret < 0) {
