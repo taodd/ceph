@@ -670,6 +670,20 @@ endif(${WITH_LTTNG})
 
 option(WITH_OSD_INSTRUMENT_FUNCTIONS OFF)
 
+#option for eBPF tracing (cephtrace)
+option(WITH_CEPHTRACE "Build eBPF tracing tools (radostrace)" ON)
+if(WITH_CEPHTRACE AND LINUX)
+  find_program(CLANG_EXECUTABLE clang)
+  if(NOT CLANG_EXECUTABLE)
+    message(FATAL_ERROR "clang is required for WITH_CEPHTRACE but was not found")
+  endif()
+  find_package(LibElf REQUIRED)
+  find_package(LibDw REQUIRED)
+  set(HAVE_CEPHTRACE ON)
+elseif(WITH_CEPHTRACE AND NOT LINUX)
+  message(FATAL_ERROR "WITH_CEPHTRACE is only supported on Linux")
+endif()
+
 #option for Babeltrace
 option(WITH_BABELTRACE "Babeltrace libraries are enabled" ON)
 if(WITH_BABELTRACE)
