@@ -18,12 +18,10 @@
 
 find_path(LibDw_INCLUDE_DIR
   NAMES elfutils/libdw.h
-  PATHS /usr/include /usr/local/include
 )
 
 find_library(LibDw_LIBRARY
   NAMES dw
-  PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
 )
 
 include(FindPackageHandleStandardArgs)

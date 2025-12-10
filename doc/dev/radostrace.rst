@@ -5,7 +5,7 @@ RadosTrace
 RadosTrace is an eBPF-based tracing tool that provides real-time visibility into
 RADOS client operations. It captures latency, object names, target OSDs, and
 other operation details for every request flowing through librados. It can be 
-used to trace any librados based ceph clients, including VM, Cinder/Glance, radosgw
+used to trace any librados based ceph clients, including VM, Cinder/Glance, radosgw,
 cephfs-mirror, etc..
 
 Why eBPF for Ceph?
@@ -66,13 +66,13 @@ Kernel and System
 Building RadosTrace
 ===================
 
-RadosTrace is built as part of Ceph when the ``WITH_CEPHTRACE`` option is
+RadosTrace is built as part of Ceph when the ``WITH_EBPF_TRACE`` option is
 enabled (it is ON by default):
 
 .. code-block:: bash
 
    cd ceph
-   ./do_cmake.sh -DWITH_CEPHTRACE=ON
+   ./do_cmake.sh -DWITH_EBPF_TRACE=ON
    cd build
    ninja radostrace
 
@@ -80,7 +80,7 @@ The resulting binary is located at ``build/bin/radostrace``.
 
 To explicitly disable radostrace::
 
-   ./do_cmake.sh -DWITH_CEPHTRACE=OFF
+   ./do_cmake.sh -DWITH_EBPF_TRACE=OFF
 
 Usage
 =====

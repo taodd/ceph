@@ -1,7 +1,7 @@
-# eBPF tracing tools (cephtrace)
+# eBPF tracing tools
 # Requires: clang, libbpf, libelf, libdw
 
-if(NOT WITH_CEPHTRACE)
+if(NOT WITH_EBPF_TRACE)
   return()
 endif()
 
@@ -16,22 +16,25 @@ elseif(ARCH MATCHES "mips.*")
   set(ARCH "mips")
 endif()
 
+# Build libbpf and bpftool using ExternalProject
+include(Buildlibbpf)
+include(Buildbpftool)
+build_libbpf()
+build_bpftool()
+
+# libbpf requires zlib
+find_package(ZLIB REQUIRED)
+
 # Paths
 set(EBPF_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(EBPF_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
-set(LIBBPF_SRC ${EBPF_SOURCE_DIR}/libbpf/src)
-set(LIBBPF_TOP ${EBPF_SOURCE_DIR}/libbpf)
-set(BPFTOOL_SRC ${EBPF_SOURCE_DIR}/bpftool/src)
-set(BPFTOOL_OUTPUT ${EBPF_BINARY_DIR}/bpftool)
-set(BPFTOOL ${BPFTOOL_OUTPUT}/bootstrap/bpftool)
-set(LIBBPF_OBJ ${EBPF_BINARY_DIR}/libbpf/libbpf.a)
 
-# Include paths
+# Include paths for BPF compilation
 set(EBPF_INCLUDES
   -I${EBPF_SOURCE_DIR}
   -I${EBPF_BINARY_DIR}
-  -I${LIBBPF_TOP}/include/uapi
-  -I${LIBBPF_SRC})
+  -I${LIBBPF_UAPI_INCLUDE_DIR}
+  -I${LIBBPF_SRC_DIR})
 
 # Get clang BPF system includes
 execute_process(
@@ -53,39 +56,6 @@ foreach(LINE ${CLANG_INCLUDE_DIRS})
     list(APPEND CLANG_BPF_SYS_INCLUDES "-idirafter${LINE}")
   endif()
 endforeach()
-
-# Build libbpf
-add_custom_command(
-  OUTPUT ${LIBBPF_OBJ}
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${EBPF_BINARY_DIR}/libbpf/build
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${EBPF_BINARY_DIR}/libbpf/install
-  COMMAND make -C ${LIBBPF_SRC}
-    BUILD_STATIC_ONLY=1
-    OBJDIR=${EBPF_BINARY_DIR}/libbpf/build
-    DESTDIR=${EBPF_BINARY_DIR}/libbpf/install
-    INCLUDEDIR= LIBDIR= UAPIDIR=
-    install
-  COMMAND ${CMAKE_COMMAND} -E copy
-    ${EBPF_BINARY_DIR}/libbpf/install/libbpf.a
-    ${LIBBPF_OBJ}
-  DEPENDS ${LIBBPF_SRC}/Makefile
-  COMMENT "Building libbpf"
-)
-
-add_custom_target(libbpf_target DEPENDS ${LIBBPF_OBJ})
-
-# Build bpftool
-add_custom_command(
-  OUTPUT ${BPFTOOL}
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${BPFTOOL_OUTPUT}
-  COMMAND make -C ${BPFTOOL_SRC}
-    OUTPUT=${BPFTOOL_OUTPUT}/
-    bootstrap
-  DEPENDS ${BPFTOOL_SRC}/Makefile
-  COMMENT "Building bpftool"
-)
-
-add_custom_target(bpftool_target DEPENDS ${BPFTOOL})
 
 # Generate bpf_ceph_exported.h from source headers
 add_custom_command(
@@ -115,7 +85,7 @@ add_custom_command(
     ${CLANG_BPF_SYS_INCLUDES}
     -c ${EBPF_SOURCE_DIR}/radostrace.bpf.c
     -o ${EBPF_BINARY_DIR}/radostrace.tmp.bpf.o
-  COMMAND ${BPFTOOL} gen object
+  COMMAND ${BPFTOOL_EXECUTABLE} gen object
     ${EBPF_BINARY_DIR}/radostrace.bpf.o
     ${EBPF_BINARY_DIR}/radostrace.tmp.bpf.o
   DEPENDS
@@ -123,8 +93,8 @@ add_custom_command(
     ${EBPF_BINARY_DIR}/bpf_ceph_exported.h
     ${EBPF_SOURCE_DIR}/bpf_ceph_types.h
     ${EBPF_SOURCE_DIR}/bpf_utils.h
-    bpftool_target
-    libbpf_target
+    bpftool_ext
+    libbpf_ext
     bpf_ceph_export_target
   COMMENT "Compiling BPF program radostrace.bpf.c"
   VERBATIM
@@ -133,7 +103,7 @@ add_custom_command(
 # Generate BPF skeleton
 add_custom_command(
   OUTPUT ${EBPF_BINARY_DIR}/radostrace.skel.h
-  COMMAND ${BPFTOOL} gen skeleton
+  COMMAND ${BPFTOOL_EXECUTABLE} gen skeleton
     ${EBPF_BINARY_DIR}/radostrace.bpf.o
     > ${EBPF_BINARY_DIR}/radostrace.skel.h
   DEPENDS ${EBPF_BINARY_DIR}/radostrace.bpf.o
@@ -150,13 +120,12 @@ add_library(dwarf_parser OBJECT
 target_include_directories(dwarf_parser PRIVATE
   ${EBPF_SOURCE_DIR}
   ${EBPF_BINARY_DIR}
-  ${EBPF_BINARY_DIR}/libbpf/install
-  ${LIBBPF_TOP}/include/uapi
-  ${LIBBPF_SRC}
+  ${LIBBPF_INCLUDE_DIR}
+  ${LIBBPF_UAPI_INCLUDE_DIR}
+  ${LIBBPF_SRC_DIR}
 )
 
-
-add_dependencies(dwarf_parser libbpf_target)
+add_dependencies(dwarf_parser libbpf_ext)
 
 # Build radostrace executable
 add_executable(radostrace
@@ -172,24 +141,24 @@ add_executable(radostrace
 target_include_directories(radostrace PRIVATE
   ${EBPF_SOURCE_DIR}
   ${EBPF_BINARY_DIR}
-  ${EBPF_BINARY_DIR}/libbpf/install
-  ${LIBBPF_TOP}/include/uapi
-  ${LIBBPF_SRC}
+  ${LIBBPF_INCLUDE_DIR}
+  ${LIBBPF_UAPI_INCLUDE_DIR}
+  ${LIBBPF_SRC_DIR}
   ${CMAKE_SOURCE_DIR}/src
 )
 
 target_link_libraries(radostrace
-  ${LIBBPF_OBJ}
+  libbpf::libbpf
   LibElf::LibElf
   LibDw::LibDw
-  z
+  ZLIB::ZLIB
   ${CMAKE_DL_LIBS}
   common
 )
 
 add_dependencies(radostrace
-  libbpf_target
-  bpftool_target
+  libbpf_ext
+  bpftool_ext
   bpf_ceph_export_target
 )
 

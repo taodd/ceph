@@ -18,13 +18,11 @@
 
 find_path(LibElf_INCLUDE_DIR
   NAMES libelf.h
-  PATHS /usr/include /usr/local/include
   PATH_SUFFIXES libelf
 )
 
 find_library(LibElf_LIBRARY
   NAMES elf
-  PATHS /usr/lib /usr/local/lib /usr/lib/x86_64-linux-gnu
 )
 
 include(FindPackageHandleStandardArgs)

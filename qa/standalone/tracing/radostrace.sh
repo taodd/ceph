@@ -47,7 +47,6 @@ function run() {
     # Check if radostrace binary exists
     if [ ! -x ./bin/radostrace ]; then
         echo "radostrace binary not found, skipping tests"
-        echo "Build with -DWITH_CEPHTRACE=ON to enable"
         return 0
     fi
 

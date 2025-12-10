@@ -66,6 +66,6 @@ if(WITH_EVENTTRACE)
 endif()
 
 # eBPF tracing tools
-if(WITH_CEPHTRACE)
+if(WITH_EBPF_TRACE)
   add_subdirectory(eBPF)
 endif()
