@@ -36,6 +36,19 @@ set(EBPF_INCLUDES
   -I${LIBBPF_UAPI_INCLUDE_DIR}
   -I${LIBBPF_SRC_DIR})
 
+# Add architecture-specific system includes for BPF compilation
+# When clang targets BPF, it doesn't automatically search host arch-specific paths
+# like /usr/include/x86_64-linux-gnu where asm/types.h resides
+if(CMAKE_LIBRARY_ARCHITECTURE)
+  set(ARCH_SYSINCLUDE "-isystem/usr/include/${CMAKE_LIBRARY_ARCHITECTURE}")
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  set(ARCH_SYSINCLUDE "-isystem/usr/include/x86_64-linux-gnu")
+elseif(CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  set(ARCH_SYSINCLUDE "-isystem/usr/include/aarch64-linux-gnu")
+else()
+  set(ARCH_SYSINCLUDE "")
+endif()
+
 # Get clang BPF system includes
 execute_process(
   COMMAND ${CLANG_EXECUTABLE} -v -E -
@@ -82,6 +95,7 @@ add_custom_command(
   COMMAND ${CLANG_EXECUTABLE} -g -O2 -target bpf
     -D__TARGET_ARCH_${ARCH}
     ${EBPF_INCLUDES}
+    ${ARCH_SYSINCLUDE}
     ${CLANG_BPF_SYS_INCLUDES}
     -c ${EBPF_SOURCE_DIR}/radostrace.bpf.c
     -o ${EBPF_BINARY_DIR}/radostrace.tmp.bpf.o
