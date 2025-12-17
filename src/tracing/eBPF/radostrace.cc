@@ -27,6 +27,14 @@
 #include <vector>
 #include <fstream>
 
+// C++ compatibility: bpftool generates skeleton code using _Bool (C99 type).
+// glibc's stdbool.h defines _Bool as bool in C++ mode, but Clang's stdbool.h
+// only does this when __STRICT_ANSI__ is not set. With -std=c++XX (strict mode),
+// Clang defines __STRICT_ANSI__, causing _Bool to be undefined.
+// This is the same fix used by Linux kernel BPF selftests.
+#ifndef _Bool
+#define _Bool bool
+#endif
 #include "radostrace.skel.h"
 
 #include "bpf_ceph_types.h"
