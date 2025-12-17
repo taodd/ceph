@@ -30,9 +30,11 @@ set(EBPF_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(EBPF_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR})
 
 # Include paths for BPF compilation
+# LIBBPF_INCLUDE_DIR contains installed headers (bpf/*.h) from bundled libbpf build
 set(EBPF_INCLUDES
   -I${EBPF_SOURCE_DIR}
   -I${EBPF_BINARY_DIR}
+  -I${LIBBPF_INCLUDE_DIR}
   -I${LIBBPF_UAPI_INCLUDE_DIR}
   -I${LIBBPF_SRC_DIR})
 
