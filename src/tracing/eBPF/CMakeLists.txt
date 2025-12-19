@@ -128,6 +128,8 @@ add_custom_command(
 )
 
 # Build dwarf_parser object
+# Note: dwarf_parser only uses elfutils (libdw/libdwfl) for DWARF parsing,
+# it does NOT use libbpf
 add_library(dwarf_parser OBJECT
   ${EBPF_SOURCE_DIR}/dwarf_parser.cc
   ${EBPF_SOURCE_DIR}/dwarf_parser.h
@@ -136,12 +138,7 @@ add_library(dwarf_parser OBJECT
 target_include_directories(dwarf_parser PRIVATE
   ${EBPF_SOURCE_DIR}
   ${EBPF_BINARY_DIR}
-  ${LIBBPF_INCLUDE_DIR}
-  ${LIBBPF_UAPI_INCLUDE_DIR}
-  ${LIBBPF_SRC_DIR}
 )
-
-add_dependencies(dwarf_parser libbpf_ext)
 
 # Build radostrace executable
 add_executable(radostrace

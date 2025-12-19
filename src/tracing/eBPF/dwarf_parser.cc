@@ -1,4 +1,3 @@
-#include <bpf/libbpf.h>
 #include <errno.h>
 #include <getopt.h>
 #include <stdio.h>
