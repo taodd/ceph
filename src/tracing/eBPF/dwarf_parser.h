@@ -59,10 +59,10 @@ class DwarfParser {
 
   ~DwarfParser();
   void add_module(std::string);
-  bool die_has_loclist(Dwarf_Die *);
-  bool has_loclist();
+  bool die_has_loclist(Dwarf_Die *) const;
+  bool has_loclist() const;
   Dwarf_Die *resolve_typedecl(Dwarf_Die *);
-  const char *cache_type_prefix(Dwarf_Die *);
+  const char *cache_type_prefix(Dwarf_Die *) const;
   int iterate_types_in_cu(mod_cu_type_cache_t &, Dwarf_Die *);
   void traverse_module(Dwfl_Module *, Dwarf *, bool);
   Dwarf_Die find_param(Dwarf_Die *, std::string);
@@ -71,7 +71,7 @@ class DwarfParser {
                                        Dwarf_Die &);
   bool func_entrypc(Dwarf_Die *, Dwarf_Addr *);
   bool find_prologue(Dwarf_Die *func, Dwarf_Addr &pc);
-  void dwarf_die_type(Dwarf_Die *, Dwarf_Die *);
+  void dwarf_die_type(Dwarf_Die *, Dwarf_Die *) const;
   void find_class_member(Dwarf_Die *, Dwarf_Die *, std::string,
                          Dwarf_Attribute *);
   void translate_fields(Dwarf_Die *, Dwarf_Die *, Dwarf_Addr,

@@ -30,7 +30,7 @@ extern "C" {
 
 using namespace std;
 
-bool DwarfParser::die_has_loclist(Dwarf_Die *begin_die) {
+bool DwarfParser::die_has_loclist(Dwarf_Die *begin_die) const {
   Dwarf_Die die;
   Dwarf_Attribute loc;
 
@@ -54,7 +54,7 @@ bool DwarfParser::die_has_loclist(Dwarf_Die *begin_die) {
   return false;
 }
 
-bool DwarfParser::has_loclist() {
+bool DwarfParser::has_loclist() const {
   assert(cur_cu);
   return die_has_loclist(cur_cu);
 }
@@ -95,7 +95,7 @@ Dwarf_Die *DwarfParser::resolve_typedecl(Dwarf_Die *type) {
   return NULL;
 }
 
-const char *DwarfParser::cache_type_prefix(Dwarf_Die *type) {
+const char *DwarfParser::cache_type_prefix(Dwarf_Die *type) const {
   switch (dwarf_tag(type)) {
     case DW_TAG_enumeration_type:
       return "enum ";
@@ -268,7 +268,7 @@ bool DwarfParser::find_prologue(Dwarf_Die *func, Dwarf_Addr &pc) {
   return true;
 }
 
-void DwarfParser::dwarf_die_type(Dwarf_Die *die, Dwarf_Die *typedie_mem) {
+void DwarfParser::dwarf_die_type(Dwarf_Die *die, Dwarf_Die *typedie_mem) const {
   Dwarf_Attribute attr_mem, *attr;
   attr = dwarf_attr_integrate(die, DW_AT_type, &attr_mem);
   Dwarf_Die *tmpdie = dwarf_formref_die(attr, typedie_mem);
