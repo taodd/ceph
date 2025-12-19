@@ -1,5 +1,6 @@
 #include <errno.h>
 #include <getopt.h>
+#include <linux/types.h>
 #include <stdio.h>
 #include <sys/resource.h>
 #include <time.h>
@@ -169,8 +170,6 @@ void DwarfParser::traverse_module(Dwfl_Module *mod, Dwarf *dw, bool want_type) {
     Dwarf_Die die_mem;
     Dwarf_Die *die;
     die = dwarf_offdie(dw, off + cuhl, &die_mem);
-    string cu_name = dwarf_diename(die) ?: "<unknown>";
-    //cout << "preprocess_module cu name " << cu_name << endl;
     /* Skip partial units. */
     if (dwarf_tag(die) == DW_TAG_compile_unit) {
        	iterate_types_in_cu(mcu, die);
@@ -500,7 +499,6 @@ int handle_function(Dwarf_Die *die, void *data) {
     }
   }
 
-  // debug: printf("function fullname is %s\n", fullname.c_str());
   if (dp->probes.find(fullname) == dp->probes.end()) {
     return 0;
   }
@@ -534,18 +532,12 @@ int handle_function(Dwarf_Die *die, void *data) {
     string varname = arr[i][0];
     Dwarf_Die vardie, typedie;
     VarLocation varloc = dp->translate_param_location(die, varname, pc, vardie);
-    //printf("var %s location : register %d, offset %d, stack %d\n",
-     //varname.c_str(), varloc.reg, varloc.offset, varloc.stack);
     vf[i].varloc = varloc;
 
     // translate fileds
     dp->dwarf_die_type(&vardie, &typedie);
     vf[i].fields.resize(arr[i].size());
     dp->translate_fields(&vardie, &typedie, pc, arr[i], vf[i].fields);
-    for (int j = 1; j < (int)vf[i].fields.size(); ++j) {
-       //printf("Field %s is at offset %d, defref %d\n", arr[i][j].c_str(),
-       //vf[i].fields[j].offset, vf[i].fields[j].pointer);
-    }
   }
   return 0;
 }
@@ -667,9 +659,6 @@ Dwfl *DwarfParser::create_dwfl(int fd, const char *fname) {
 
   dwfl = dwfl_begin(&callbacks);
 
-  // if(dwfl != NULL)
-  // dwfl->offline_next_address = 0;
-
   if (dwfl_report_offline(dwfl, fname, fname, dwfl_fd) == NULL) {
     cerr << "dwfl_report_offline open dwfl failed" << endl;
     close(dwfl_fd);
@@ -742,9 +731,7 @@ int handle_module(Dwfl_Module *dwflmod, void **userdata,
       assert(dp->cfi_debug == NULL || dp->cfi_debug_bias == 0);
 
       string cu_name = dwarf_diename(&cu_die) ?: "<unknown>";
-      //cout << "handle_module cu name " << cu_name << endl;
       if (dp->filter_cu(cu_name) || cu_name == "<artificial>") {
-        //cout << "cu name " << cu_name << endl;
         dp->cur_cu = &cu_die;
         dwarf_getfuncs(&cu_die, (int (*)(Dwarf_Die *, void *))handle_function,
                        dp, 0);
